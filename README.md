@@ -8,30 +8,50 @@ First, install the necessary Python packages:
 
 ```bash
 pip install embedchain PyPDF2 markdown tqdm
+'''
 
+### Step-by-Step Explanation
 
-### Document Topic Analysis Script
+#### Setup and Configuration:
 
-This Python script is designed to analyze a collection of documents and extract the top topics. It leverages the `EmbedChain` library for document embedding, storage, and querying.
+* Imports necessary libraries (like `os`, `json`, `embedchain`, etc.)
+* Defines a configuration dictionary (`config`) for the EmbedChain app, specifying the language model (LLM), embedder, vector database, and chunking settings
+* Removes any existing database to start fresh
+* Initializes the EmbedChain app using the provided configuration
 
-**Key Functionality:**
+#### Document Reading and Conversion:
 
-1. **Document Ingestion:**
-   - Reads text, markdown, and PDF files from a specified directory.
-   - Converts markdown to HTML and extracts text from PDFs.
+* Defines a function (`read_files_from_directory`) to:
+    + Traverse a specified directory (`directory_path`)
+    + Read the contents of `.txt`, `.md`, and `.pdf` files
+    + Convert markdown content to HTML
+    + Extract text from PDFs
+    + Store the text and source information in a list (`file_data`)
 
-2. **Embedding and Storage:**
-   - Embeds the text content of each document using a language model and vector database.
-   - Stores the embeddings along with metadata (source, document ID) in a vector database.
+#### Embedding and Adding to Database:
 
-3. **Topic Querying:**
-   - Defines a query to instruct the language model to identify and analyze the top topics within the embedded documents.
+* Iterates through each document in `file_data`
+    + Assigns a unique ID (`document_id`)
+    + Creates metadata including the source and ID
+    + Embeds the document's text using the EmbedChain app and stores it in the vector database, associating the metadata with it
 
-4. **Report Generation:**
-   - Executes the query and retrieves the results from the language model.
-   - Parses the results and extracts the top topics, their frequency, importance, and example mentions.
-   - Generates a markdown report summarizing the extracted topics.
+#### Topic Analysis Query:
 
+* Defines a query (`queries`) that instructs the LLM to analyze the embedded content and identify the top topics, providing details like topic name, frequency, importance, example mentions, and source
+
+#### Query Processing and Report Generation:
+
+* Sets a system instruction to guide the LLM's behavior
+* Initializes an empty string (`report_content`) to store the report
+* Executes the query using the EmbedChain app
+* Parses the response from the LLM, extracting the top topics
+* Constructs a markdown-formatted report (`report_content`) with the extracted topic details
+
+#### Saving the Report:
+
+* Specifies the report's filename (`topic_analysis.md`)
+* Writes the markdown report to the specified file
+* Prints a confirmation message
 **Libraries Used:**
 
 - `embedchain`: For document embedding, storage, and querying.
