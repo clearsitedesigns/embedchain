@@ -7,7 +7,6 @@ This project demonstrates how to use EmbedChain to embed text data from various 
 ```bash
 pip install embedchain PyPDF2 markdown tqdm
 ```
-```
 
 
 ### Step-by-Step Explanation
