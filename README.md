@@ -9,64 +9,74 @@ pip install embedchain PyPDF2 markdown tqdm
 ```
 
 
-### Step-by-Step Explanation
+# EmbedChain Topic Analysis Script
 
-#### Setup and Configuration:
+## Step-by-Step Explanation
 
-* Imports necessary libraries (like `os`, `json`, `embedchain`, etc.)
-* Defines a configuration dictionary (`config`) for the EmbedChain app, specifying the language model (LLM), embedder, vector database, and chunking settings
-* Removes any existing database to start fresh
-* Initializes the EmbedChain app using the provided configuration
+### Setup and Configuration
+1. **Imports necessary libraries**:
+   - `os`, `json`, `shutil`, `sys`
+   - `embedchain`, `tqdm`, `markdown`, `PyPDF2`
 
-#### Document Reading and Conversion:
+2. **Defines a configuration dictionary (`config`) for the EmbedChain app**:
+   - Specifies the language model (LLM), embedder, vector database, and chunking settings.
 
-* Defines a function (`read_files_from_directory`) to:
-    + Traverse a specified directory (`directory_path`)
-    + Read the contents of `.txt`, `.md`, and `.pdf` files
-    + Convert markdown content to HTML
-    + Extract text from PDFs
-    + Store the text and source information in a list (`file_data`)
+3. **Removes any existing database to start fresh**:
+   - Deletes the specified vector database directory if it exists.
 
-#### Embedding and Adding to Database:
+4. **Initializes the EmbedChain app using the provided configuration**:
+   - Uses the `App.from_config(config=config)` method.
 
-* Iterates through each document in `file_data`
-    + Assigns a unique ID (`document_id`)
-    + Creates metadata including the source and ID
-    + Embeds the document's text using the EmbedChain app and stores it in the vector database, associating the metadata with it
+### Document Reading and Conversion
+1. **Defines a function (`read_files_from_directory`) to**:
+   - Traverse a specified directory (`directory_path`).
+   - Read the contents of `.txt`, `.md`, and `.pdf` files.
+   - Convert markdown content to HTML.
+   - Extract text from PDFs.
+   - Store the text and source information in a list (`file_data`).
 
-#### Topic Analysis Query:
+### Embedding and Adding to Database
+1. **Iterates through each document in `file_data`**:
+   - Assigns a unique ID (`document_id`).
+   - Creates metadata including the source and ID.
+   - Embeds the document's text using the EmbedChain app and stores it in the vector database, associating the metadata with it.
 
-* Defines a query (`queries`) that instructs the LLM to analyze the embedded content and identify the top topics, providing details like topic name, frequency, importance, example mentions, and source
+### Topic Analysis Query
+1. **Defines a query (`queries`) that instructs the LLM to**:
+   - Analyze the embedded content.
+   - Identify the top topics.
+   - Provide details like topic name, frequency, importance, example mentions, and source.
 
-#### Query Processing and Report Generation:
+### Query Processing and Report Generation
+1. **Sets a system instruction to guide the LLM's behavior**.
+2. **Initializes an empty string (`report_content`) to store the report**.
+3. **Executes the query using the EmbedChain app**.
+4. **Parses the response from the LLM**:
+   - Extracts the top topics.
+5. **Constructs a markdown-formatted report (`report_content`) with the extracted topic details**.
 
-* Sets a system instruction to guide the LLM's behavior
-* Initializes an empty string (`report_content`) to store the report
-* Executes the query using the EmbedChain app
-* Parses the response from the LLM, extracting the top topics
-* Constructs a markdown-formatted report (`report_content`) with the extracted topic details
+### Saving the Report
+1. **Specifies the report's filename (`topic_analysis.md`)**.
+2. **Writes the markdown report to the specified file**.
+3. **Prints a confirmation message**.
 
-#### Saving the Report:
+## Libraries Used
+- **embedchain**: For document embedding, storage, and querying.
+- **os**: For file and directory operations.
+- **json**: For handling JSON data.
+- **shutil**: For directory removal.
+- **tqdm**: For progress bar visualization.
+- **markdown**: For markdown to HTML conversion.
+- **PyPDF2**: For PDF text extraction.
 
-* Specifies the report's filename (`topic_analysis.md`)
-* Writes the markdown report to the specified file
-* Prints a confirmation message
-**Libraries Used:**
+## How to Use
 
-- `embedchain`: For document embedding, storage, and querying.
-- `os`: For file and directory operations.
-- `json`: For handling JSON data.
-- `shutil`: For directory removal.
-- `tqdm`: For progress bar visualization.
-- `markdown`: For markdown to HTML conversion.
-- `PyPDF2`: For PDF text extraction.
+### Configure:
+1. **Set the `directory_path` variable** to the directory containing your documents.
+2. **Customize the `config` dictionary** to adjust embedding settings, language model, etc.
 
-**How to Use:**
+### Run:
+1. **Execute the script**.
 
-1. **Configure:**
-   - Set the `directory_path` variable to the directory containing your documents.
-   - Customize the `config` dictionary to adjust embedding settings, language model, etc.
-2. **Run:**
-   - Execute the script.
-3. **Output:**
-   - A markdown report named `topic_analysis.md` will be generated in the same directory as the script, containing the identified top topics.
+### Output:
+1. **A markdown report named `topic_analysis.md`** will be generated in the same directory as the script, containing the identified top topics.
