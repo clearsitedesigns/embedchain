@@ -7,7 +7,6 @@ import markdown
 import PyPDF2
 
 
-
 # EmbedChain configuration
 config = {
     "llm": {
@@ -36,9 +35,9 @@ config = {
     },
     "chunker": {
         "chunk_size": 350,
-        "chunk_overlap": 100,  # Adjusted to be less than min_chunk_size
+        "chunk_overlap": 100,
         "length_function": "len",
-        "min_chunk_size": 300  # Adjusted to be greater than chunk_overlap
+        "min_chunk_size": 300
     }
 }
 
@@ -50,7 +49,11 @@ if os.path.exists(config["vectordb"]["config"]["dir"]):
 app = App.from_config(config=config)
 
 # Path to your directory containing various file types
-directory_path = "ServiceDesignSource"
+directory_path = "/Users/imaginethepoet/Documents/Github/localGPTPrest/GRAPH"
+
+# Variable to check for a particular topic source
+topic_area = " Neurophysiology"
+
 
 # Function to read text from various file types, including subdirectories
 def read_files_from_directory(directory):
@@ -81,30 +84,32 @@ file_data = read_files_from_directory(directory_path)
 
 # Embed the data and add it to the collection
 for idx, data in enumerate(file_data):
-    document_id = f"doc_{idx}"  # Unique identifier for each document
+    document_id = f"doc_{idx}"
     metadata = {"source": data["source"], "document_id": document_id}
-    app.add(data["text"], metadata=metadata)  # Adding text content with metadata
+    app.add(data["text"], metadata=metadata)
     print(f"Added document {document_id} to collection with source {data['source']}.")
 
 # Define queries for analyzing the top topics
 queries = [
     {
-        "query": """
-        Analyze the embedded content and identify the top topics. For each topic, provide the following details:
+        "query": f"""
+        Analyze the embedded content and identify the top topics related to {topic_area}. For each topic, provide the following details:
         - Topic Name
+        - A brief description of the topic as a sentence
         - Frequency (the number of times the topic appears)
         - Importance (a score indicating the relevance or significance of the topic)
         - Example Mentions (examples of sentences or paragraphs where the topic is mentioned)
+        - Related topics within in the content sources
         - Source (the source of the example mentions, including file name or URL)
 
-        Focus your analysis solely on the content embedded within the EmbedChain database, without referring to any external sources.
+        Focus your analysis solely on the content embedded within the EmbedChain database, without referring to any external sources. If the data does not exist don't make it up say I that you dont have information.
         """,
         "name": "top_topics"
     }
 ]
 
-system_instruction = """
-As an expert in content analysis, your task is to examine the entire content embedded in the EmbedChain database and provide the requested information based on the given query.
+system_instruction = f"""
+As an expert in content analysis, your task is to examine the entire content embedded in the EmbedChain database and provide the requested information based on the given query, focusing specifically on topics related to {topic_area}.
 
 Focus your analysis solely on the content embedded within the EmbedChain database, without referring to any external sources.
 """
@@ -117,32 +122,69 @@ chat_history = []
 query_data = queries[0]
 query = query_data["query"]
 chat_history.append({"role": "user", "content": query})
-app_response = app.query(query, chat_history=chat_history)  # Assuming this is a correct query
+app_response = app.query(query, chat_history=chat_history)
 chat_history.append({"role": "assistant", "content": app_response})
 
-# Parse the string response as JSON
-try:
-    parsed_response = json.loads(app_response)
-except json.JSONDecodeError:
-    parsed_response = {"response": app_response}
+# Debugging: Print the response from app.query
+print("App Response:")
+print(app_response)
 
-top_topics = parsed_response.get("top_topics", [])
+def extract_topics_from_response(response):
+    topics = []
+    lines = response.split("\n")
+    current_topic = None
+    
+    for line in lines:
+        if line.startswith("**Topic"):
+            if current_topic:
+                topics.append(current_topic)
+            current_topic = {"topic_name": "", "description": "", "related_topics": "", "frequency": 0, "importance": 0, "example_mentions": [], "source": ""}
+            current_topic["topic_name"] = line.split(":")[1].strip()
+        elif line.startswith("* Description:"):
+            current_topic["description"] = line.split(":")[1].strip()
+        elif line.startswith("* Related Topics:"):
+            current_topic["related_topics"] = line.split(":")[1].strip()
+        elif line.startswith("* Frequency:"):
+            current_topic["frequency"] = int(line.split(":")[1].strip())
+        elif line.startswith("* Importance:"):
+            current_topic["importance"] = float(line.split(":")[1].strip())
+        elif line.startswith("\t+"):
+            current_topic["example_mentions"].append(line.strip())
+        elif line.startswith("* Source:"):
+            current_topic["source"] = line.split(":")[1].strip()
+    
+    if current_topic:
+        topics.append(current_topic)
+    
+    return topics
+
+top_topics = extract_topics_from_response(app_response)
+print("Top Topics:")
+print(top_topics)
+
 report_content += "## Top Topics\n\n"
 for topic in top_topics:
     report_content += f"Topic Name: {topic['topic_name']}\n"
+    report_content += f"Description: {topic['description']}\n"
+    report_content += f"Related Topics: {topic['related_topics']}\n"
     report_content += f"Frequency: {topic['frequency']}\n"
     report_content += f"Importance: {topic['importance']}\n"
     report_content += "Example Mentions:\n"
     for mention in topic['example_mentions']:
         report_content += f"- {mention}\n"
-    report_content += f"Source: {topic['source']}\n"  # Include the source information
+    report_content += f"Source: {topic['source']}\n"
     report_content += "\n"
 
+print("Report Content:")
+print(report_content)
+
 # Specify the path to save your markdown report
-report_path = "topic_analysis.md"
+report_path = "topic_analysis2.md"
 
 # Write the markdown content to a file
-with open(report_path, "w") as report_file:
-    report_file.write(report_content)
-
-print(f"Report has been saved to {report_path}")
+try:
+    with open(report_path, "w") as report_file:
+        report_file.write(report_content)
+    print(f"Report has been saved to {report_path}")
+except Exception as e:
+    print("Error writing report:", e)
