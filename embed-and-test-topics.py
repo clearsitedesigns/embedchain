@@ -1,11 +1,11 @@
 import os
 import json
 import shutil
+import sys
 from embedchain import App
 from tqdm import tqdm
 import markdown
 import PyPDF2
-
 
 # EmbedChain configuration
 config = {
@@ -54,7 +54,6 @@ directory_path = "/Users/imaginethepoet/Documents/Github/localGPTPrest/GRAPH"
 # Variable to check for a particular topic source
 topic_area = " Neurophysiology"
 
-
 # Function to read text from various file types, including subdirectories
 def read_files_from_directory(directory):
     file_data = []
@@ -88,12 +87,13 @@ for idx, data in enumerate(file_data):
     metadata = {"source": data["source"], "document_id": document_id}
     app.add(data["text"], metadata=metadata)
     print(f"Added document {document_id} to collection with source {data['source']}.")
+    sys.stdout.flush()
 
 # Define queries for analyzing the top topics
 queries = [
     {
         "query": f"""
-        Analyze the embedded content and identify the top topics related to {topic_area}. For each topic, provide the following details:
+        Analyze the embedded content and identify the top 5 topics related to {topic_area}. For each topic, provide the following details:
         - Topic Name
         - A brief description of the topic as a sentence
         - Frequency (the number of times the topic appears)
@@ -128,63 +128,16 @@ chat_history.append({"role": "assistant", "content": app_response})
 # Debugging: Print the response from app.query
 print("App Response:")
 print(app_response)
+sys.stdout.flush()
 
-def extract_topics_from_response(response):
-    topics = []
-    lines = response.split("\n")
-    current_topic = None
-    
-    for line in lines:
-        if line.startswith("**Topic"):
-            if current_topic:
-                topics.append(current_topic)
-            current_topic = {"topic_name": "", "description": "", "related_topics": "", "frequency": 0, "importance": 0, "example_mentions": [], "source": ""}
-            current_topic["topic_name"] = line.split(":")[1].strip()
-        elif line.startswith("* Description:"):
-            current_topic["description"] = line.split(":")[1].strip()
-        elif line.startswith("* Related Topics:"):
-            current_topic["related_topics"] = line.split(":")[1].strip()
-        elif line.startswith("* Frequency:"):
-            current_topic["frequency"] = int(line.split(":")[1].strip())
-        elif line.startswith("* Importance:"):
-            current_topic["importance"] = float(line.split(":")[1].strip())
-        elif line.startswith("\t+"):
-            current_topic["example_mentions"].append(line.strip())
-        elif line.startswith("* Source:"):
-            current_topic["source"] = line.split(":")[1].strip()
-    
-    if current_topic:
-        topics.append(current_topic)
-    
-    return topics
+# Save the exact response to the file
+report_path = "/Users/imaginethepoet/Documents/Github/localGPTPrest/topic_analysis2.md"
 
-top_topics = extract_topics_from_response(app_response)
-print("Top Topics:")
-print(top_topics)
-
-report_content += "## Top Topics\n\n"
-for topic in top_topics:
-    report_content += f"Topic Name: {topic['topic_name']}\n"
-    report_content += f"Description: {topic['description']}\n"
-    report_content += f"Related Topics: {topic['related_topics']}\n"
-    report_content += f"Frequency: {topic['frequency']}\n"
-    report_content += f"Importance: {topic['importance']}\n"
-    report_content += "Example Mentions:\n"
-    for mention in topic['example_mentions']:
-        report_content += f"- {mention}\n"
-    report_content += f"Source: {topic['source']}\n"
-    report_content += "\n"
-
-print("Report Content:")
-print(report_content)
-
-# Specify the path to save your markdown report
-report_path = "topic_analysis2.md"
-
-# Write the markdown content to a file
 try:
     with open(report_path, "w") as report_file:
-        report_file.write(report_content)
+        report_file.write(app_response)
     print(f"Report has been saved to {report_path}")
+    sys.stdout.flush()
 except Exception as e:
     print("Error writing report:", e)
+    sys.stdout.flush()
