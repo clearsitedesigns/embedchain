@@ -1,0 +1,5 @@
+embedchain
+PyPDF2
+markdown
+tqdm
+colorama
