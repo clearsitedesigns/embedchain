@@ -3,3 +3,8 @@ PyPDF2
 markdown
 tqdm
 colorama
+embedchain
+colorama
+loguru
+tqdm
+rich

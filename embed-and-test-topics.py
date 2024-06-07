@@ -14,8 +14,11 @@ def prompt_with_default(prompt, default):
     return user_input.strip() or default
 
 # Function to list existing databases
-def list_existing_databases():
-    databases = [name for name in os.listdir(".") if os.path.isdir(name)]
+def list_existing_databases(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        print(Fore.YELLOW + f"Directory '{directory}' created as it did not exist." + Style.RESET_ALL)
+    databases = [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
     if databases:
         print(Fore.CYAN + "Existing databases:" + Style.RESET_ALL)
         for db in databases:
@@ -27,6 +30,13 @@ def list_existing_databases():
 def save_database_names(database_names):
     with open("database_names.json", "w") as f:
         json.dump(database_names, f)
+
+# Function to validate collection name
+def valid_collection_name(name):
+    import re
+    if 3 <= len(name) <= 63 and re.match("^[a-zA-Z0-9]([a-zA-Z0-9_-]*[a-zA-Z0-9])?$", name):
+        return True
+    return False
 
 # Load existing database names from JSON file
 if os.path.exists("database_names.json"):
@@ -43,8 +53,12 @@ if database_name in existing_database_names:
     print(Fore.RED + "Database name already exists. Please choose a different name." + Style.RESET_ALL)
     sys.exit(1)
 
-# Prompt user for collection name
+# Prompt user for collection name and ensure it meets the criteria
 collection_name = prompt_with_default("Enter collection name", "default_collection")
+
+while not valid_collection_name(collection_name):
+    print(Fore.RED + "Invalid collection name. Please choose a valid name (3-63 characters, alphanumeric, underscores, hyphens, no consecutive periods)." + Style.RESET_ALL)
+    collection_name = prompt_with_default("Enter collection name", "default_collection")
 
 # Prompt user for chunking strategy
 print(Fore.MAGENTA + "Determine chunking strategy:" + Style.RESET_ALL)
@@ -96,8 +110,8 @@ config = {
     "vectordb": {
         "provider": "chroma",
         "config": {
-            "collection_name": collection_name,
-            "dir": database_name,
+            "collection_name": collection_name,  # Ensure this is a valid collection name
+            "dir": "databases",  # Ensure this directory exists
             "allow_reset": True
         }
     },
@@ -113,7 +127,7 @@ config = {
 app = App.from_config(config=config)
 
 # List existing databases
-list_existing_databases()
+list_existing_databases(config["vectordb"]["config"]["dir"])
 
 # Save database name in the list of existing databases
 existing_database_names.append(database_name)
@@ -185,15 +199,18 @@ queries = [
         - Related topics within in the content sources
         - Source (the source of the example mentions, including file name or URL)
 
-        Focus your analysis solely on the content embedded within the EmbedChain database, without referring to any external sources. If the data does not exist don't make it up say I that you dont have information.
+        Focus your analysis solely on the content embedded within the EmbedChain database, without referring to any external sources. If the data does not exist, say that you don't have the information.
         """,
         "name": "top_topics"
     }
 ]
 
+# Define the system instruction message
+system_message = "You are an AI assistant that helps users find information from the indexed documents. Please verify that the question can be answered using the available data. If the data is not present, inform the user that the question cannot be answered using the available data."
+
 # Process the query and generate the report
 report_content = ""
-chat_history = []
+chat_history = [{"role": "system", "content": system_message}]
 
 # Top Topics Identification
 query_data = queries[0]
@@ -226,6 +243,10 @@ if num_documents > 0:
 
     # Combine report content with statistics tables
     report_content = app_response + statistics_table + chroma_statistics_table
+
+    # Display statistics in the terminal
+    print(chroma_statistics_table)
+    print(statistics_table)
 else:
     print(Fore.RED + "No documents were found or embedded." + Style.RESET_ALL)
     report_content = app_response
@@ -240,3 +261,16 @@ try:
     print(Fore.CYAN + f"Report with statistics table has been saved to {report_path}" + Style.RESET_ALL)
 except Exception as e:
     print(Fore.RED + "Error writing report:" + Style.RESET_ALL, e)
+
+# Continual chat loop
+while True:
+    user_query = input("Enter your query (or type 'exit' to end): ")
+    if user_query.lower() == 'exit':
+        break
+
+    chat_history.append({"role": "user", "content": user_query})
+    app_response = app.query(user_query, chat_history=chat_history)
+    chat_history.append({"role": "assistant", "content": app_response})
+
+    print(Fore.GREEN + "Response:" + Style.RESET_ALL)
+    print(app_response)

@@ -158,3 +158,24 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+database_names.json
+databases/6bb9f9e6-9ec2-4b7a-9d23-baee8233a65d/data_level0.bin
+databases/6bb9f9e6-9ec2-4b7a-9d23-baee8233a65d/header.bin
+databases/6bb9f9e6-9ec2-4b7a-9d23-baee8233a65d/length.bin
+databases/6bb9f9e6-9ec2-4b7a-9d23-baee8233a65d/link_lists.bin
+databases/chroma.sqlite3
+databases/eed5d96b-376c-4667-8d4e-7768017c0489/data_level0.bin
+databases/eed5d96b-376c-4667-8d4e-7768017c0489/header.bin
+databases/eed5d96b-376c-4667-8d4e-7768017c0489/index_metadata.pickle
+databases/eed5d96b-376c-4667-8d4e-7768017c0489/length.bin
+databases/eed5d96b-376c-4667-8d4e-7768017c0489/link_lists.bin
+output/topic_analysis_report.md
+qa_pairs.json
+session_data.json
+temp_document.txt
+clean_pdf.py
+config.json
+chat_with_file.py
+chat_with_dir.py
+chat-with-database.py
+chat-ensemble-database.py
